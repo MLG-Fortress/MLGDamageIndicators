@@ -1,11 +1,14 @@
 package com.robomwm.mlgdamageindicators;
 
-import com.gmail.filoghost.holographicdisplays.api.Hologram;
-import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -13,6 +16,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.joml.Vector3f;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -28,7 +32,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class MLGDamageIndicators extends JavaPlugin implements Listener
 {
     JavaPlugin instance;
-    Set<Hologram> activeHolograms = new HashSet<>();
+    Set<TextDisplay> activeHolograms = new HashSet<>();
     DecimalFormat df = new DecimalFormat("#.#");
 
     public void onEnable()
@@ -48,9 +52,9 @@ public class MLGDamageIndicators extends JavaPlugin implements Listener
 
     public int cleanupDamageIndicators()
     {
-        for (Hologram hologram : activeHolograms)
+        for (TextDisplay hologram : activeHolograms)
         {
-            hologram.delete();
+            hologram.remove();
         }
         int i = activeHolograms.size();
         activeHolograms.clear();
@@ -97,26 +101,32 @@ public class MLGDamageIndicators extends JavaPlugin implements Listener
 
     public void displayIndicator(final Location location, final double value, final boolean isDamage)
     {
-        ChatColor color;
+        TextColor color;
         if (isDamage)
-            color = ChatColor.RED;
+            color = NamedTextColor.RED;
         else
-            color = ChatColor.GREEN;
+            color = NamedTextColor.GREEN;
         displayIndicator(location, value, isDamage, color);
     }
 
-    public void displayIndicator(final Location location, final double value, final boolean isDamage, ChatColor color)
+    public void displayIndicator(final Location location, final double value, final boolean isDamage, TextColor color)
     {
         double x = r4nd0m(-0.3D, 0.3D);
         double z = r4nd0m(-0.3D, 0.3D);
         long duration = ((long)value / 2) + 20L; //Increase display duration by a second per 40 hearts of damage.
         if (duration > 100L) duration = 100L; //Cap to 5 seconds max (cookiez r insanely op, y'uh know)
 
-        Hologram hologram = HologramsAPI.createHologram(instance, location.add(x, 0D, z));
-        if (isDamage)
-            hologram.appendTextLine(color + "-" + df.format(value));
-        else
-            hologram.appendTextLine(color + "+" + df.format(value));
+        Component text = Component.text((isDamage ? "-" : "+") + df.format(value), color);
+
+        TextDisplay hologram = location.getWorld().spawn(location.add(x, 0D, z), TextDisplay.class, display -> {
+            display.text(text);
+            display.setBillboard(Display.Billboard.CENTER);
+            display.setBackgroundColor(Color.fromARGB(0, 0, 0, 0)); // Transparent background
+            display.setShadowed(true);
+            display.setInterpolationDuration(10); // Smooth movement
+            display.setInterpolationDelay(-1); // Start immediately
+        });
+
         activeHolograms.add(hologram);
 
         new BukkitRunnable()
@@ -128,12 +138,15 @@ public class MLGDamageIndicators extends JavaPlugin implements Listener
                 phase++;
                 if (phase >= 2)
                 {
-                    hologram.delete();
+                    hologram.remove();
                     activeHolograms.remove(hologram);
                     this.cancel();
                     return;
                 }
-                hologram.teleport(hologram.getLocation().add(0D, 1D, 0D));
+                // Use transformation for smooth floating up
+                org.bukkit.util.Transformation transformation = hologram.getTransformation();
+                transformation.getTranslation().add(new Vector3f(0, 1.0f, 0));
+                hologram.setTransformation(transformation);
             }
         }.runTaskTimer(instance, 1L, duration);
     }

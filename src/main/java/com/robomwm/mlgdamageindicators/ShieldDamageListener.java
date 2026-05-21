@@ -1,7 +1,7 @@
 package com.robomwm.mlgdamageindicators;
 
 import com.robomwm.absorptionshields.event.ShieldDamageEvent;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -28,6 +28,6 @@ public class ShieldDamageListener implements Listener
             return;
         if (event.getDamage() <= 0.05D)
             return;
-        instance.displayIndicator(event.getVictim().getLocation().add(0, 2.2, 0), event.getDamage() / 2D, true, ChatColor.GOLD);
+        instance.displayIndicator(event.getVictim().getLocation().add(0, 2.2, 0), event.getDamage() / 2D, true, NamedTextColor.GOLD);
     }
 }
