@@ -4,8 +4,6 @@ website: https://github.com/MLG-Fortress/MLGDamageIndicators
 description: Displays damage indicators in the form of holograms. Is used and originally created for the MLG Fortress server as part of the MountainDewritoes server plugin.
 author: RoboMWM
 main: com.robomwm.mlgdamageindicators.MLGDamageIndicators
-depend:
-- HolographicDisplays
 softdepend:
 - AbsorptionShields
 - Crackshot
